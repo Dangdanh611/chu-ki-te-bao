@@ -1,0 +1,2119 @@
+
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chu Kì Tế Bào · Nguyên Phân · Giảm Phân</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1525;
+    --bg3: #141b2e;
+    --surface: #1a2340;
+    --surface2: #1f2a4a;
+    --accent: #4fc3f7;
+    --accent2: #81c784;
+    --accent3: #ffb74d;
+    --accent4: #ce93d8;
+    --text: #e8eaf6;
+    --text2: #b0bec5;
+    --text3: #78909c;
+    --divider: rgba(79,195,247,0.15);
+    --glow: rgba(79,195,247,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  ::selection { background: rgba(79,195,247,0.3); color: #fff; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+  /* ===== PROGRESS BAR ===== */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent4));
+    z-index: 1000; width: 0%; transition: width 0.1s;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--divider);
+    padding: 0 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; color: var(--accent);
+    text-transform: uppercase;
+  }
+  .nav-links {
+    display: flex; gap: 32px; list-style: none;
+  }
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px; color: var(--text3);
+    text-decoration: none; text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    position: relative; overflow: hidden;
+    padding: 120px 40px 80px;
+    text-align: center;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(79,195,247,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 20% 70%, rgba(206,147,216,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 80% 60%, rgba(129,199,132,0.04) 0%, transparent 60%);
+  }
+
+  /* Animated cells */
+  .cell-bg {
+    position: absolute; border-radius: 50%; border: 1px solid;
+    animation: floatCell linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes floatCell {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 4px; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 0.8s 0.3s forwards;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(42px, 8vw, 96px);
+    font-weight: 900; line-height: 1.05;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 40%, var(--accent4) 70%, #fff 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 0.8s 0.5s forwards;
+  }
+
+  .hero-subtitle {
+    font-size: 18px; color: var(--text2); max-width: 600px;
+    font-style: italic; margin-bottom: 48px;
+    opacity: 0; animation: fadeUp 0.8s 0.7s forwards;
+  }
+
+  .hero-meta {
+    display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    opacity: 0; animation: fadeUp 0.8s 0.9s forwards;
+  }
+
+  .hero-meta-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text3); letter-spacing: 1px;
+  }
+  .hero-meta-item span { color: var(--accent); }
+
+  .scroll-hint {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    opacity: 0; animation: fadeUp 0.8s 1.2s forwards;
+  }
+  .scroll-hint p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 3px; color: var(--text3); text-transform: uppercase;
+  }
+  .scroll-line {
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse {
+    0%,100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.2); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== LAYOUT ===== */
+  .container {
+    max-width: 900px; margin: 0 auto; padding: 0 40px;
+  }
+
+  /* ===== SECTION ===== */
+  section {
+    padding: 100px 0;
+    border-bottom: 1px solid var(--divider);
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.8s, transform 0.8s;
+  }
+  section.visible { opacity: 1; transform: translateY(0); }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 4px; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, var(--accent), transparent);
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700; line-height: 1.2;
+    color: var(--text); margin-bottom: 32px;
+  }
+  h2 em { color: var(--accent); font-style: italic; }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--text); margin: 40px 0 16px;
+  }
+
+  p { color: var(--text2); margin-bottom: 20px; font-size: 17px; }
+
+  strong { color: var(--text); font-weight: 600; }
+
+  /* ===== INTRO CARD ===== */
+  .intro-card {
+    background: var(--surface);
+    border: 1px solid var(--divider);
+    border-radius: 2px;
+    padding: 40px;
+    position: relative; overflow: hidden;
+    margin: 40px 0;
+  }
+  .intro-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: linear-gradient(to bottom, var(--accent), var(--accent4));
+  }
+  .intro-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-style: italic;
+    color: var(--text2); line-height: 1.6;
+  }
+  .intro-quote cite {
+    display: block; margin-top: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; color: var(--accent);
+    font-style: normal;
+  }
+
+  /* ===== PHASE GRID ===== */
+  .phase-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px; background: var(--divider);
+    border: 1px solid var(--divider);
+    margin: 40px 0;
+  }
+  .phase-card {
+    background: var(--bg2);
+    padding: 32px; position: relative; overflow: hidden;
+    transition: background 0.3s;
+  }
+  .phase-card:hover { background: var(--surface); }
+  .phase-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 64px; font-weight: 900;
+    color: var(--divider); position: absolute;
+    top: -10px; right: 16px; line-height: 1;
+    pointer-events: none;
+  }
+  .phase-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .phase-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700; color: var(--text);
+    margin-bottom: 12px;
+  }
+  .phase-card p { font-size: 14px; margin: 0; }
+
+  /* ===== CYCLE DIAGRAM ===== */
+  .cycle-diagram {
+    background: var(--bg2);
+    border: 1px solid var(--divider);
+    border-radius: 2px;
+    padding: 60px 40px;
+    text-align: center; margin: 40px 0;
+    position: relative; overflow: hidden;
+  }
+  .cycle-svg { width: 100%; max-width: 520px; height: auto; }
+
+  /* ===== TIMELINE ===== */
+  .timeline { margin: 40px 0; position: relative; }
+  .timeline::before {
+    content: ''; position: absolute; left: 20px; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(to bottom, var(--accent), transparent);
+  }
+  .timeline-item {
+    display: flex; gap: 32px; margin-bottom: 40px;
+    padding-left: 20px;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+  .timeline-item.visible { opacity: 1; transform: translateX(0); }
+  .timeline-dot {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    position: relative; margin-left: -20px;
+    background: var(--bg);
+  }
+  .timeline-content { padding-top: 8px; }
+  .timeline-content h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .timeline-content p { font-size: 15px; margin: 0; }
+
+  /* ===== FORMULA BOX ===== */
+  .formula-section {
+    background: var(--bg2); border: 1px solid var(--divider);
+    border-radius: 2px; padding: 48px; margin: 40px 0;
+  }
+  .formula-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px; margin-top: 32px;
+  }
+  .formula-block {
+    background: var(--bg3); border: 1px solid var(--divider);
+    padding: 28px;
+  }
+  .formula-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: var(--accent);
+    background: rgba(79,195,247,0.06);
+    border: 1px solid rgba(79,195,247,0.2);
+    padding: 16px 20px;
+    border-radius: 2px;
+    margin: 12px 0;
+    line-height: 1.8;
+  }
+  .formula .var { color: var(--accent3); }
+  .formula .result { color: var(--accent2); }
+  .formula-note { font-size: 13px; color: var(--text3); margin-top: 12px; }
+
+  /* ===== COMPARISON TABLE ===== */
+  .compare-table-wrap { overflow-x: auto; margin: 40px 0; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead tr {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+  }
+  th {
+    padding: 16px 20px; text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  td {
+    padding: 14px 20px; color: var(--text2);
+    border-bottom: 1px solid var(--divider);
+  }
+  tbody tr { transition: background 0.2s; }
+  tbody tr:hover { background: var(--surface); }
+  .check { color: var(--accent2); }
+  .cross { color: #ef5350; }
+
+  /* ===== CALLOUT ===== */
+  .callout {
+    padding: 28px 32px;
+    border-radius: 2px;
+    margin: 32px 0;
+    border-left: 3px solid;
+    position: relative;
+  }
+  .callout-info { background: rgba(79,195,247,0.06); border-color: var(--accent); }
+  .callout-warning { background: rgba(255,183,77,0.06); border-color: var(--accent3); }
+  .callout-success { background: rgba(129,199,132,0.06); border-color: var(--accent2); }
+  .callout-purple { background: rgba(206,147,216,0.06); border-color: var(--accent4); }
+  .callout-icon {
+    font-size: 20px; margin-bottom: 10px; display: block;
+  }
+  .callout h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700; margin-bottom: 8px;
+  }
+  .callout p { font-size: 15px; margin: 0; }
+
+  /* ===== EXAMPLE CALC ===== */
+  .calc-example {
+    background: var(--bg3);
+    border: 1px solid var(--divider);
+    padding: 32px; margin: 24px 0;
+    position: relative;
+  }
+  .calc-example::before {
+    content: 'VÍ DỤ'; position: absolute; top: -10px; left: 20px;
+    background: var(--bg3); padding: 0 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 3px; color: var(--accent3);
+  }
+  .calc-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .calc-step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,183,77,0.15); border: 1px solid var(--accent3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--accent3); flex-shrink: 0;
+  }
+  .calc-step p { font-size: 14px; margin: 4px 0 0; }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--accent);
+    background: rgba(79,195,247,0.08);
+    padding: 2px 8px; border-radius: 2px;
+  }
+
+  /* ===== APP CARDS ===== */
+  .app-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px; background: var(--divider);
+    border: 1px solid var(--divider);
+    margin: 40px 0;
+  }
+  .app-card {
+    background: var(--bg2); padding: 32px;
+    transition: background 0.3s;
+  }
+  .app-card:hover { background: var(--surface); }
+  .app-icon { font-size: 32px; margin-bottom: 16px; }
+  .app-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--text); margin-bottom: 12px;
+  }
+  .app-card p { font-size: 14px; margin: 0; }
+
+  /* ===== ACHIEVEMENT ===== */
+  .achievement-list { margin: 32px 0; }
+  .achievement-item {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 20px 0; border-bottom: 1px solid var(--divider);
+  }
+  .achievement-year {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--accent3);
+    min-width: 50px; padding-top: 2px;
+  }
+  .achievement-item h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .achievement-item p { font-size: 14px; margin: 0; }
+
+  /* ===== STATS ===== */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px; background: var(--divider);
+    border: 1px solid var(--divider);
+    margin: 40px 0;
+  }
+  .stat-item {
+    background: var(--bg2); padding: 32px 24px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 900; color: var(--accent);
+    display: block; margin-bottom: 8px;
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    padding: 80px 40px;
+    text-align: center;
+    border-top: 1px solid var(--divider);
+  }
+  footer p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 2px; color: var(--text3);
+    text-transform: uppercase; margin: 0;
+  }
+
+  /* ===== TOC ===== */
+  .toc-float {
+    position: fixed; right: 32px; top: 50%; transform: translateY(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 6px;
+  }
+  .toc-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text3); cursor: pointer;
+    transition: all 0.3s; position: relative;
+  }
+  .toc-dot:hover, .toc-dot.active { background: var(--accent); transform: scale(1.5); }
+  .toc-dot .toc-tooltip {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    background: var(--surface); border: 1px solid var(--divider);
+    padding: 4px 10px; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 1px; color: var(--text2);
+  }
+  .toc-dot:hover .toc-tooltip { opacity: 1; }
+
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .container { padding: 0 20px; }
+    section { padding: 60px 0; }
+    .hero { padding: 100px 20px 60px; }
+    .toc-float { display: none; }
+    footer { padding: 60px 20px; }
+    .formula-section { padding: 28px; }
+    .cycle-diagram { padding: 30px 20px; }
+  }
+
+  /* ===== HIGHLIGHT TEXT ===== */
+  .highlight { color: var(--accent); }
+  .highlight2 { color: var(--accent2); }
+  .highlight3 { color: var(--accent3); }
+  .highlight4 { color: var(--accent4); }
+
+  /* Animated counter */
+  .counter { display: inline-block; }
+
+  /* DNA helix decoration */
+  .dna-decor {
+    display: flex; justify-content: center; margin: 48px 0;
+    gap: 8px; opacity: 0.4;
+  }
+  .dna-decor span {
+    width: 4px; background: var(--accent);
+    border-radius: 2px;
+    animation: dnaWave 1.5s ease-in-out infinite;
+  }
+  @keyframes dnaWave {
+    0%,100% { height: 12px; }
+    50% { height: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Sinh Học · Tế Bào</div>
+  <ul class="nav-links">
+    <li><a href="#chu-ki">Chu Kì</a></li>
+    <li><a href="#nguyen-phan">Nguyên Phân</a></li>
+    <li><a href="#giam-phan">Giảm Phân</a></li>
+    <li><a href="#tinh-toan">Tính Toán</a></li>
+    <li><a href="#ung-dung">Ứng Dụng</a></li>
+    <li><a href="#thanh-tuu">Thành Tựu</a></li>
+  </ul>
+</nav>
+
+<!-- TOC DOTS -->
+<div class="toc-float" id="toc">
+  <div class="toc-dot active" data-target="hero"><span class="toc-tooltip">Giới Thiệu</span></div>
+  <div class="toc-dot" data-target="chu-ki"><span class="toc-tooltip">Chu Kì Tế Bào</span></div>
+  <div class="toc-dot" data-target="nguyen-phan"><span class="toc-tooltip">Nguyên Phân</span></div>
+  <div class="toc-dot" data-target="giam-phan"><span class="toc-tooltip">Giảm Phân</span></div>
+  <div class="toc-dot" data-target="tinh-toan"><span class="toc-tooltip">Công Thức</span></div>
+  <div class="toc-dot" data-target="so-sanh"><span class="toc-tooltip">So Sánh</span></div>
+  <div class="toc-dot" data-target="ung-dung"><span class="toc-tooltip">Ứng Dụng</span></div>
+  <div class="toc-dot" data-target="thanh-tuu"><span class="toc-tooltip">Thành Tựu</span></div>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <!-- Floating cells -->
+  <div class="cell-bg" style="left:10%;width:60px;height:60px;border-color:rgba(79,195,247,0.3);animation-duration:12s;animation-delay:0s;"></div>
+  <div class="cell-bg" style="left:25%;width:40px;height:40px;border-color:rgba(206,147,216,0.3);animation-duration:15s;animation-delay:3s;"></div>
+  <div class="cell-bg" style="left:70%;width:80px;height:80px;border-color:rgba(129,199,132,0.2);animation-duration:10s;animation-delay:6s;"></div>
+  <div class="cell-bg" style="left:85%;width:50px;height:50px;border-color:rgba(255,183,77,0.2);animation-duration:18s;animation-delay:2s;"></div>
+  <div class="cell-bg" style="left:50%;width:30px;height:30px;border-color:rgba(79,195,247,0.4);animation-duration:9s;animation-delay:5s;"></div>
+  <div class="cell-bg" style="left:5%;width:100px;height:100px;border-color:rgba(206,147,216,0.1);animation-duration:20s;animation-delay:1s;"></div>
+
+  <div style="position:relative;z-index:1;">
+    <div class="hero-tag">Khoa Học Sự Sống · Sinh Học Tế Bào</div>
+    <h1>Chu Kì Tế Bào<br>Nguyên Phân & Giảm Phân</h1>
+    <p class="hero-subtitle">Hành trình kỳ diệu của sự sống — từ một tế bào đơn độc đến muôn vàn hình thái sinh vật trên Trái Đất</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">Chủ đề <span>Sinh học tế bào</span></div>
+      <div class="hero-meta-item">Cấp độ <span>Trung học — Đại học</span></div>
+      <div class="hero-meta-item">Đọc trong <span>~20 phút</span></div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <p>Cuộn xuống</p>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- SECTION 1: CHU KÌ TẾ BÀO -->
+<section id="chu-ki">
+  <div class="container">
+    <div class="section-label">01 · Nền Tảng</div>
+    <h2>Chu Kì <em>Tế Bào</em></h2>
+
+    <div class="intro-card">
+      <p class="intro-quote">
+        "Mọi tế bào đều sinh ra từ một tế bào khác."
+        <cite>— Rudolf Virchow, 1855</cite>
+      </p>
+    </div>
+
+    <p>Chu kì tế bào (<em>cell cycle</em>) là chuỗi các sự kiện có trật tự xảy ra trong tế bào nhân thực, bắt đầu từ khi tế bào được tạo ra và kết thúc khi tế bào đó phân chia để tạo ra hai tế bào con. Đây là cơ sở của mọi quá trình sinh trưởng, phát triển và sinh sản ở sinh vật nhân thực.</p>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-num" data-count="37">0</span>
+        <span class="stat-label">Nghìn tỷ tế bào người</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="24">0</span>
+        <span class="stat-label">Giờ / chu kì tế bào người</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="46">0</span>
+        <span class="stat-label">NST ở người (2n)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-count="3">0</span>
+        <span class="stat-label">Tỷ cặp base DNA người</span>
+      </div>
+    </div>
+
+    <h3>Các Pha Của Chu Kì Tế Bào</h3>
+    <p>Chu kì tế bào chia thành hai giai đoạn chính: <strong>Kì trung gian (Interphase)</strong> chiếm phần lớn thời gian, và <strong>Pha phân bào (M phase)</strong> là khi phân chia thực sự diễn ra.</p>
+
+    <!-- Cycle Diagram SVG -->
+    <div class="cycle-diagram">
+      <svg class="cycle-svg" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4fc3f7;stop-opacity:0.8"/>
+            <stop offset="100%" style="stop-color:#4fc3f7;stop-opacity:0.2"/>
+          </linearGradient>
+          <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#81c784;stop-opacity:0.8"/>
+            <stop offset="100%" style="stop-color:#81c784;stop-opacity:0.2"/>
+          </linearGradient>
+          <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ffb74d;stop-opacity:0.8"/>
+            <stop offset="100%" style="stop-color:#ffb74d;stop-opacity:0.2"/>
+          </linearGradient>
+          <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ce93d8;stop-opacity:0.8"/>
+            <stop offset="100%" style="stop-color:#ce93d8;stop-opacity:0.2"/>
+          </linearGradient>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#4fc3f7" opacity="0.6"/>
+          </marker>
+        </defs>
+        <!-- Background circle -->
+        <circle cx="260" cy="260" r="230" fill="none" stroke="rgba(79,195,247,0.08)" stroke-width="1"/>
+        <!-- G1 sector (large, ~40%) -->
+        <path d="M260,260 L260,30 A230,230 0 0,1 490,260 Z" fill="rgba(79,195,247,0.08)" stroke="rgba(79,195,247,0.3)" stroke-width="1.5"/>
+        <!-- S sector (~35%) -->
+        <path d="M260,260 L490,260 A230,230 0 0,1 157,476 Z" fill="rgba(129,199,132,0.08)" stroke="rgba(129,199,132,0.3)" stroke-width="1.5"/>
+        <!-- G2 sector (~20%) -->
+        <path d="M260,260 L157,476 A230,230 0 0,1 30,190 Z" fill="rgba(255,183,77,0.08)" stroke="rgba(255,183,77,0.3)" stroke-width="1.5"/>
+        <!-- M sector (~5%) -->
+        <path d="M260,260 L30,190 A230,230 0 0,1 260,30 Z" fill="rgba(206,147,216,0.12)" stroke="rgba(206,147,216,0.4)" stroke-width="1.5"/>
+
+        <!-- Labels -->
+        <text x="390" y="155" font-family="'Playfair Display', serif" font-size="18" fill="#4fc3f7" font-weight="700">G₁</text>
+        <text x="395" y="175" font-family="'Source Serif 4', serif" font-size="12" fill="rgba(79,195,247,0.7)">~40%</text>
+        <text x="390" y="370" font-family="'Playfair Display', serif" font-size="18" fill="#81c784" font-weight="700">S</text>
+        <text x="388" y="390" font-family="'Source Serif 4', serif" font-size="12" fill="rgba(129,199,132,0.7)">~35%</text>
+        <text x="80" y="400" font-family="'Playfair Display', serif" font-size="18" fill="#ffb74d" font-weight="700">G₂</text>
+        <text x="78" y="420" font-family="'Source Serif 4', serif" font-size="12" fill="rgba(255,183,77,0.7)">~20%</text>
+        <text x="90" y="180" font-family="'Playfair Display', serif" font-size="18" fill="#ce93d8" font-weight="700">M</text>
+        <text x="88" y="200" font-family="'Source Serif 4', serif" font-size="12" fill="rgba(206,147,216,0.7)">~5%</text>
+
+        <!-- Center -->
+        <circle cx="260" cy="260" r="80" fill="rgba(10,14,26,0.95)" stroke="rgba(79,195,247,0.2)" stroke-width="1"/>
+        <text x="260" y="253" text-anchor="middle" font-family="'Playfair Display', serif" font-size="14" fill="#e8eaf6" font-weight="700">CHU KÌ</text>
+        <text x="260" y="272" text-anchor="middle" font-family="'Playfair Display', serif" font-size="14" fill="#e8eaf6" font-weight="700">TẾ BÀO</text>
+
+        <!-- Interphase label -->
+        <text x="260" y="490" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="rgba(176,190,197,0.5)" letter-spacing="3">INTERPHASE = G₁ + S + G₂</text>
+
+        <!-- Rotation arrow -->
+        <path d="M 370 60 A 200 200 0 0 1 450 200" fill="none" stroke="rgba(79,195,247,0.4)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="6,4"/>
+      </svg>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-top:16px;">Sơ đồ chu kì tế bào (tỉ lệ thời gian xấp xỉ)</p>
+    </div>
+
+    <div class="phase-grid">
+      <div class="phase-card">
+        <div class="phase-number" style="color:rgba(79,195,247,0.1);">G₁</div>
+        <div class="phase-tag" style="color:var(--accent);">Kì trung gian</div>
+        <h4>Pha G₁ — Tăng trưởng</h4>
+        <p style="color:var(--text2);">Tế bào tổng hợp protein, tăng kích thước. Điểm kiểm soát R (<em>Restriction point</em>) quyết định tế bào có tiếp tục chu kì hay không.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-number" style="color:rgba(129,199,132,0.1);">S</div>
+        <div class="phase-tag" style="color:var(--accent2);">Kì trung gian</div>
+        <h4>Pha S — Nhân đôi DNA</h4>
+        <p style="color:var(--text2);">DNA được sao chép chính xác. Mỗi nhiễm sắc thể từ 1 chromatid → 2 chromatid chị em (sister chromatids) gắn nhau tại tâm động.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-number" style="color:rgba(255,183,77,0.1);">G₂</div>
+        <div class="phase-tag" style="color:var(--accent3);">Kì trung gian</div>
+        <h4>Pha G₂ — Chuẩn bị phân bào</h4>
+        <p style="color:var(--text2);">Kiểm tra lại DNA, tổng hợp protein cần thiết cho phân bào. Điểm kiểm soát G₂/M đảm bảo DNA đã nhân đôi hoàn toàn.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-number" style="color:rgba(206,147,216,0.1);">M</div>
+        <div class="phase-tag" style="color:var(--accent4);">Phân bào</div>
+        <h4>Pha M — Phân bào</h4>
+        <p style="color:var(--text2);">Nguyên phân (mitosis) và phân bào chất (cytokinesis). Gồm: Kì đầu → Kì giữa → Kì sau → Kì cuối.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔬</span>
+      <h4>Điểm Kiểm Soát (Checkpoints)</h4>
+      <p>Chu kì tế bào có 3 điểm kiểm soát quan trọng: <strong>G₁/S checkpoint</strong> (đủ dinh dưỡng, kích thước?), <strong>G₂/M checkpoint</strong> (DNA nhân đôi hoàn chỉnh?), và <strong>Spindle checkpoint</strong> (NST gắn đúng thoi vô sắc?). Nếu điểm kiểm soát phát hiện lỗi, chu kì dừng lại để sửa chữa hoặc khởi động apoptosis (chết tế bào theo chương trình).</p>
+    </div>
+
+    <h3>Pha G₀ — Trạng Thái Nghỉ</h3>
+    <p>Không phải tất cả tế bào đều liên tục phân chia. Nhiều tế bào thoát ra khỏi chu kì và vào trạng thái <strong>G₀</strong> (quiescence). Một số tế bào như tế bào thần kinh trưởng thành gần như vĩnh viễn ở G₀; một số khác có thể được kích thích quay lại chu kì khi cần thiết (tế bào gan, tế bào lympho).</p>
+  </div>
+</section>
+
+<!-- SECTION 2: NGUYÊN PHÂN -->
+<section id="nguyen-phan">
+  <div class="container">
+    <div class="section-label">02 · Phân Bào Vô Tính</div>
+    <h2>Nguyên Phân — <em>Mitosis</em></h2>
+
+    <p>Nguyên phân là quá trình phân bào dẫn đến tạo ra <strong>hai tế bào con có bộ NST giống nhau và giống tế bào mẹ</strong>. Đây là cơ sở của sinh trưởng, tái sinh mô, và sinh sản vô tính.</p>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">⚗️</span>
+      <h4>Kết Quả Nguyên Phân</h4>
+      <p>Từ 1 tế bào 2n → <strong>2 tế bào con 2n</strong> (có bộ NST lưỡng bội giống tế bào mẹ). Vật chất di truyền được bảo toàn tuyệt đối.</p>
+    </div>
+
+    <h3>Các Kì Của Nguyên Phân</h3>
+
+    <div class="timeline" id="timeline-mitosis">
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--accent);color:var(--accent);">P</div>
+        <div class="timeline-content">
+          <h4 style="color:var(--accent);">Kì Đầu — Prophase</h4>
+          <p><strong>NST co ngắn và dày lại</strong>, bắt đầu nhìn thấy rõ dưới kính hiển vi. Màng nhân và nhân con tan biến. Trung thể tách đôi và di chuyển về 2 cực tế bào. Thoi vô sắc (spindle fibers) bắt đầu hình thành từ trung thể. Ở cuối kì đầu (<em>late prophase / prometaphase</em>), sợi thoi đính vào tâm động của NST.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--accent2);color:var(--accent2);">M</div>
+        <div class="timeline-content">
+          <h4 style="color:var(--accent2);">Kì Giữa — Metaphase</h4>
+          <p><strong>NST co ngắn cực đại</strong>, xếp thành hàng ngang tại mặt phẳng xích đạo (tấm kì giữa — metaphase plate). Đây là thời điểm lí tưởng để quan sát, đếm và lập karyotype. Spindle checkpoint kiểm tra xem tất cả NST đã được gắn đúng thoi vô sắc chưa.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--accent3);color:var(--accent3);">A</div>
+        <div class="timeline-content">
+          <h4 style="color:var(--accent3);">Kì Sau — Anaphase</h4>
+          <p><strong>Protein cohesin bị phân giải</strong>, hai chromatid chị em tách nhau ra và bị kéo về hai cực đối diện. Tế bào kéo dài. Mỗi cực tế bào lúc này có đủ số NST đơn (n NST kép → 2n NST đơn). Đây là pha ngắn nhất trong nguyên phân.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--accent4);color:var(--accent4);">T</div>
+        <div class="timeline-content">
+          <h4 style="color:var(--accent4);">Kì Cuối — Telophase</h4>
+          <p><strong>Màng nhân tái hình thành</strong> xung quanh mỗi nhóm NST ở hai cực. NST giãn xoắn, nhân con tái xuất hiện. Thoi vô sắc tan biến. Tiếp theo là phân bào chất (<em>cytokinesis</em>) để hoàn chỉnh quá trình.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="border-color:var(--text3);color:var(--text3);">C</div>
+        <div class="timeline-content">
+          <h4 style="color:var(--text2);">Phân Bào Chất — Cytokinesis</h4>
+          <p>Ở tế bào <strong>động vật</strong>: vòng co thắt actin-myosin thắt lại ở vùng xích đạo, tạo rãnh phân cắt. Ở tế bào <strong>thực vật</strong>: bản tế bào (cell plate) hình thành từ trung tâm ra ngoài. Kết thúc: 2 tế bào con hoàn toàn tách biệt.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">💡</span>
+      <h4>Mẹo Nhớ Thứ Tự Các Kì</h4>
+      <p><strong>"PMAT"</strong> — <span class="highlight">P</span>rophase → <span class="highlight2">M</span>etaphase → <span class="highlight3">A</span>naphase → <span class="highlight4">T</span>elophase. Hoặc câu ghi nhớ: <em>"Phải Mời Anh Tới"</em></p>
+    </div>
+
+    <h3>Ý Nghĩa Sinh Học Của Nguyên Phân</h3>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-icon">🌱</div>
+        <h4>Sinh Trưởng</h4>
+        <p>Từ một hợp tử (1 tế bào) → cơ thể người với ~37 nghìn tỷ tế bào thông qua nguyên phân liên tiếp.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🔄</div>
+        <h4>Tái Tạo Mô</h4>
+        <p>Da người thay thế hoàn toàn sau ~2–4 tuần. Tế bào máu đỏ được sản sinh hàng triệu mỗi giây từ tủy xương.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🦎</div>
+        <h4>Tái Sinh</h4>
+        <p>Tắc kè, kỳ nhông có thể tái sinh chi đứt nhờ nguyên phân mạnh mẽ từ tế bào gốc.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🌿</div>
+        <h4>Sinh Sản Vô Tính</h4>
+        <p>Cây ghép cành, cắt nhánh; amip phân đôi; nấm nảy chồi — đều dựa trên nguyên phân.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: GIẢM PHÂN -->
+<section id="giam-phan">
+  <div class="container">
+    <div class="section-label">03 · Phân Bào Hữu Tính</div>
+    <h2>Giảm Phân — <em>Meiosis</em></h2>
+
+    <p>Giảm phân là quá trình phân bào đặc biệt xảy ra ở <strong>tế bào sinh dục</strong> (trong tuyến sinh dục), tạo ra <strong>4 tế bào con có bộ NST đơn bội (n)</strong> — bằng nửa tế bào mẹ. Đây là cơ sở của sinh sản hữu tính và tạo ra biến dị tổ hợp.</p>
+
+    <div class="callout callout-purple">
+      <span class="callout-icon">🧬</span>
+      <h4>Kết Quả Giảm Phân</h4>
+      <p>Từ 1 tế bào 2n → <strong>4 tế bào con n</strong> (đơn bội). Mỗi tế bào con mang tổ hợp NST độc đáo nhờ trao đổi chéo và phân li ngẫu nhiên.</p>
+    </div>
+
+    <h3>Giảm Phân I — Phân chia NST tương đồng</h3>
+    <p>Đây là pha <strong>giảm nhiễm thực sự</strong> — bộ NST từ 2n → n. Điểm đặc biệt nhất xảy ra ở kì đầu I.</p>
+
+    <div class="phase-grid">
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent);">Kì đầu I — Prophase I</div>
+        <h4>Tiếp Hợp & Trao Đổi Chéo</h4>
+        <p style="color:var(--text2);">NST tương đồng bắt cặp (synapsis), tạo phức hợp synaptonemal. Xảy ra <strong>crossing-over</strong> (hoán vị gen) — trao đổi đoạn NST giữa chromatid không chị em → tạo tổ hợp gen mới.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent2);">Kì giữa I — Metaphase I</div>
+        <h4>Xếp Hàng Ngẫu Nhiên</h4>
+        <p style="color:var(--text2);">Cặp NST tương đồng xếp ở mặt phẳng xích đạo theo hướng ngẫu nhiên (<em>independent assortment</em>). Với n = 23 ở người → 2²³ ≈ 8,4 triệu tổ hợp!</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent3);">Kì sau I — Anaphase I</div>
+        <h4>Tách NST Tương Đồng</h4>
+        <p style="color:var(--text2);">NST tương đồng tách về 2 cực (mỗi NST vẫn là 2 chromatid). Khác với nguyên phân — cohesin ở cánh NST bị phân giải, tâm động chưa tách.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent4);">Kì cuối I — Telophase I</div>
+        <h4>Tạo 2 Tế Bào n Kép</h4>
+        <p style="color:var(--text2);">Hai tế bào con tạm thời, mỗi tế bào có n NST kép. Có thể có pha Interkinesis ngắn (không có S phase — DNA không nhân đôi lại).</p>
+      </div>
+    </div>
+
+    <h3>Giảm Phân II — Phân chia chromatid</h3>
+    <p>Giảm phân II về cơ bản <strong>tương tự nguyên phân</strong> nhưng xảy ra với tế bào đơn bội (n). Kết quả: 2 tế bào n kép → 4 tế bào n đơn.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔑</span>
+      <h4>Điểm Khác Biệt Cốt Lõi Giảm Phân II vs Nguyên Phân</h4>
+      <p>Giảm phân II KHÔNG có nhân đôi DNA trước đó. Tế bào bước vào giảm phân II chỉ với n NST kép (không phải 2n như trong nguyên phân). Cơ chế phân tách chromatid là giống nhau.</p>
+    </div>
+
+    <h3>Nguồn Gốc Biến Dị Trong Giảm Phân</h3>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-icon">🔀</div>
+        <h4>Hoán Vị Gen (Crossing-over)</h4>
+        <p>Trao đổi đoạn giữa 2 chromatid không chị em của cặp NST tương đồng tại kì đầu I. Tạo ra các tổ hợp alen mới trên cùng một NST.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🎲</div>
+        <h4>Phân Li Độc Lập</h4>
+        <p>Các cặp NST tương đồng phân li về hai cực hoàn toàn ngẫu nhiên và độc lập với nhau (định luật Mendel II).</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🤝</div>
+        <h4>Thụ Tinh Ngẫu Nhiên</h4>
+        <p>Tinh trùng và trứng gặp nhau ngẫu nhiên → tổ hợp bộ NST hoàn toàn mới. Số tổ hợp lý thuyết ở người: (2²³)² ≈ 70 nghìn tỷ!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: TÍNH TOÁN -->
+<section id="tinh-toan">
+  <div class="container">
+    <div class="section-label">04 · Toán Sinh Học</div>
+    <h2>Công Thức <em>Tính Toán</em></h2>
+
+    <div class="formula-section">
+      <p style="color:var(--text2);margin-bottom:0;">Các công thức quan trọng cần nắm vững. Quy ước: <code>a</code> = số tế bào ban đầu; <code>k</code> = số lần nguyên phân; <code>2n</code> = bộ NST lưỡng bội.</p>
+
+      <div class="formula-grid">
+        <div class="formula-block">
+          <div class="formula-title" style="color:var(--accent);">🔬 Nguyên Phân</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số tế bào con:</p>
+          <div class="formula"><span class="var">N</span> = <span class="var">a</span> × 2<sup><span class="var">k</span></sup></div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số tế bào con mới hoàn toàn:</p>
+          <div class="formula"><span class="var">N<sub>mới</sub></span> = <span class="var">a</span> × (2<sup><span class="var">k</span></sup> − 2)</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Tổng số NST trong các tế bào con:</p>
+          <div class="formula"><span class="result">∑NST</span> = <span class="var">a</span> × 2<sup><span class="var">k</span></sup> × 2n</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số NST đơn tự do cần cung cấp:</p>
+          <div class="formula"><span class="result">∑NST cần</span> = 2n × <span class="var">a</span> × (2<sup><span class="var">k</span></sup> − 1)</div>
+        </div>
+
+        <div class="formula-block">
+          <div class="formula-title" style="color:var(--accent4);">🧬 Giảm Phân</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số giao tử (tinh trùng/trứng):</p>
+          <div class="formula"><span class="var">N<sub>giao tử</sub></span> = <span class="var">a</span> × 4 (tinh trùng)</div>
+          <div class="formula"><span class="var">N<sub>giao tử</sub></span> = <span class="var">a</span> × 1 (trứng)</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số NST trong giao tử:</p>
+          <div class="formula"><span class="result">NST</span> = n (đơn bội)</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số loại giao tử tối đa (lý thuyết):</p>
+          <div class="formula"><span class="result">Loại GT</span> = 2<sup><span class="var">n</span></sup> (phân li độc lập)</div>
+
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Tổng NST môi trường cung cấp:</p>
+          <div class="formula"><span class="result">∑NST</span> = <span class="var">a</span> × 4 × n</div>
+        </div>
+      </div>
+
+      <div class="formula-grid" style="margin-top:1px;">
+        <div class="formula-block">
+          <div class="formula-title" style="color:var(--accent2);">📊 DNA & Chromatid</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số phân tử DNA sau k lần NP:</p>
+          <div class="formula"><span class="result">N<sub>DNA</sub></span> = 2n × 2<sup><span class="var">k</span></sup></div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số chromatid ở kì giữa nguyên phân:</p>
+          <div class="formula"><span class="result">Chromatid</span> = 4n (kép)</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">Số chromatid kì giữa GP I:</p>
+          <div class="formula"><span class="result">Chromatid</span> = 4n (NST kép)</div>
+        </div>
+        <div class="formula-block">
+          <div class="formula-title" style="color:var(--accent3);">🌀 Trạng Thái NST</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">NST ở kì sau nguyên phân:</p>
+          <div class="formula"><span class="result">NST</span> = 2 × 2n (đơn)</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">NST ở kì sau GP I:</p>
+          <div class="formula"><span class="result">NST</span> = 2n (kép)</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:8px;">NST ở kì sau GP II:</p>
+          <div class="formula"><span class="result">NST</span> = 2n (đơn)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ví dụ cụ thể -->
+    <h3>Ví Dụ Tính Toán Chi Tiết</h3>
+
+    <div class="calc-example">
+      <div class="calc-step">
+        <div class="calc-step-num">Đề</div>
+        <p><strong>Bài 1 — Nguyên phân:</strong> Một tế bào lưỡng bội của người (2n = 46) tiến hành nguyên phân 5 lần liên tiếp. Tính: (a) số tế bào con; (b) số NST trong các tế bào con; (c) số NST môi trường cần cung cấp.</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">a</div>
+        <p>Số tế bào con = <code>a × 2ᵏ = 1 × 2⁵ = 32 tế bào</code></p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">b</div>
+        <p>Tổng NST = <code>32 × 46 = 1.472 NST</code></p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">c</div>
+        <p>NST môi trường cung cấp = <code>46 × (2⁵ − 1) = 46 × 31 = 1.426 NST đơn</code></p>
+      </div>
+    </div>
+
+    <div class="calc-example">
+      <div class="calc-step">
+        <div class="calc-step-num">Đề</div>
+        <p><strong>Bài 2 — Giảm phân + Thụ tinh:</strong> Ở người, có 200 tế bào sinh tinh và 50 tế bào sinh trứng cùng giảm phân. Tính số giao tử tạo ra.</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">a</div>
+        <p>Số tinh trùng = <code>200 × 4 = 800 tinh trùng</code> (mỗi tế bào sinh tinh → 4 tinh trùng)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">b</div>
+        <p>Số trứng = <code>50 × 1 = 50 trứng</code> (mỗi tế bào sinh trứng → 1 trứng + 3 thể cực)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">c</div>
+        <p>Số thể cực = <code>50 × 3 = 150 thể cực</code> (thoái hóa, không có chức năng)</p>
+      </div>
+    </div>
+
+    <div class="calc-example">
+      <div class="calc-step">
+        <div class="calc-step-num">Đề</div>
+        <p><strong>Bài 3 — Trạng thái NST:</strong> Ở loài có 2n = 8, xác định số NST ở các kì: kì giữa nguyên phân, kì sau nguyên phân, kì giữa I, kì sau I, kì sau II.</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">1</div>
+        <p>Kì giữa NP: <code>8 NST kép</code> (4 cặp, mỗi NST gồm 2 chromatid)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">2</div>
+        <p>Kì sau NP: <code>16 NST đơn</code> (2 nhóm × 8 NST đơn, chưa chia xong)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">3</div>
+        <p>Kì giữa GP I: <code>8 NST kép</code> (4 cặp tương đồng, xếp ở mặt phẳng xích đạo)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">4</div>
+        <p>Kì sau GP I: <code>8 NST kép</code> (2 nhóm × 4 NST kép, chưa chia xong)</p>
+      </div>
+      <div class="calc-step">
+        <div class="calc-step-num">5</div>
+        <p>Kì sau GP II: <code>8 NST đơn</code> (2 nhóm × 4 NST đơn)</p>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">⚠️</span>
+      <h4>Lưu Ý Quan Trọng</h4>
+      <p>Ở <strong>động vật đực</strong>: 1 tế bào sinh tinh → 4 tinh trùng có khả năng thụ tinh. Ở <strong>động vật cái</strong>: 1 tế bào sinh trứng → 1 trứng + 3 thể cực (thể cực không tham gia thụ tinh). Điều này đảm bảo trứng giữ đủ tế bào chất cho sự phát triển phôi.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: SO SÁNH -->
+<section id="so-sanh">
+  <div class="container">
+    <div class="section-label">05 · Đối Chiếu</div>
+    <h2>So Sánh <em>Nguyên Phân & Giảm Phân</em></h2>
+
+    <div class="compare-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tiêu Chí</th>
+            <th style="color:var(--accent);">Nguyên Phân</th>
+            <th style="color:var(--accent4);">Giảm Phân</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tế bào thực hiện</strong></td>
+            <td>Tế bào sinh dưỡng (somatic cells)</td>
+            <td>Tế bào sinh dục (germ cells)</td>
+          </tr>
+          <tr>
+            <td><strong>Số lần phân bào</strong></td>
+            <td>1 lần (1 lần kì trung gian + M)</td>
+            <td>2 lần (1 lần KTG + MI + MII)</td>
+          </tr>
+          <tr>
+            <td><strong>Số tế bào con</strong></td>
+            <td class="check">2 tế bào con</td>
+            <td class="check">4 tế bào con</td>
+          </tr>
+          <tr>
+            <td><strong>Bộ NST tế bào con</strong></td>
+            <td class="check">2n (lưỡng bội)</td>
+            <td class="check">n (đơn bội)</td>
+          </tr>
+          <tr>
+            <td><strong>Trao đổi chéo</strong></td>
+            <td class="cross">Không xảy ra</td>
+            <td class="check">Có (kì đầu I)</td>
+          </tr>
+          <tr>
+            <td><strong>Tiếp hợp NST</strong></td>
+            <td class="cross">Không</td>
+            <td class="check">Có (synaptonemal complex)</td>
+          </tr>
+          <tr>
+            <td><strong>NST xếp ở kì giữa</strong></td>
+            <td>Từng NST xếp tại xích đạo</td>
+            <td>Cặp tương đồng xếp tại xích đạo (MI)</td>
+          </tr>
+          <tr>
+            <td><strong>Kì sau — tách</strong></td>
+            <td>Chromatid chị em tách nhau</td>
+            <td>NST tương đồng tách (MI) / chromatid tách (MII)</td>
+          </tr>
+          <tr>
+            <td><strong>Biến dị di truyền</strong></td>
+            <td class="cross">Không tạo biến dị</td>
+            <td class="check">Tạo đa dạng di truyền lớn</td>
+          </tr>
+          <tr>
+            <td><strong>Vai trò sinh học</strong></td>
+            <td>Sinh trưởng, tái tạo, sinh sản vô tính</td>
+            <td>Sinh sản hữu tính, tạo giao tử</td>
+          </tr>
+          <tr>
+            <td><strong>Ví dụ</strong></td>
+            <td>Tế bào da, cơ, gan, nguyên bào sợi</td>
+            <td>Tinh hoàn, buồng trứng</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dna-decor">
+      <span style="animation-delay:0s;"></span><span style="animation-delay:0.1s;"></span>
+      <span style="animation-delay:0.2s;"></span><span style="animation-delay:0.3s;"></span>
+      <span style="animation-delay:0.4s;"></span><span style="animation-delay:0.5s;"></span>
+      <span style="animation-delay:0.6s;"></span><span style="animation-delay:0.7s;"></span>
+      <span style="animation-delay:0.8s;"></span><span style="animation-delay:0.9s;"></span>
+      <span style="animation-delay:1.0s;"></span><span style="animation-delay:1.1s;"></span>
+    </div>
+
+    <h3>Điểm Tương Đồng</h3>
+    <div class="phase-grid">
+      <div class="phase-card">
+        <h4 style="font-size:15px;">DNA nhân đôi trước phân bào</h4>
+        <p style="font-size:13px;">Cả hai đều có pha S (nhân đôi DNA) trong kì trung gian trước khi phân chia.</p>
+      </div>
+      <div class="phase-card">
+        <h4 style="font-size:15px;">Thoi vô sắc</h4>
+        <p style="font-size:13px;">Cả hai đều sử dụng thoi vô sắc (microtubule spindle) để kéo NST về hai cực.</p>
+      </div>
+      <div class="phase-card">
+        <h4 style="font-size:15px;">Các kì phân bào</h4>
+        <p style="font-size:13px;">Đều trải qua: kì đầu, kì giữa, kì sau, kì cuối trong mỗi lần phân chia nhân.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: ỨNG DỤNG -->
+<section id="ung-dung">
+  <div class="container">
+    <div class="section-label">06 · Thực Tiễn</div>
+    <h2>Ứng Dụng <em>Thực Tế</em></h2>
+
+    <p>Hiểu biết về chu kì tế bào, nguyên phân và giảm phân đã mở ra vô số ứng dụng cách mạng trong y học, nông nghiệp và công nghệ sinh học.</p>
+
+    <h3>Y Học & Điều Trị Ung Thư</h3>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-icon">💊</div>
+        <h4>Thuốc Hóa Trị</h4>
+        <p>Taxol, Vincristine phá hủy thoi vô sắc → tế bào ung thư không thể hoàn thành nguyên phân → chết. Methotrexate ức chế tổng hợp nucleotide → DNA không nhân đôi được.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🎯</div>
+        <h4>Ức Chế CDK</h4>
+        <p>Thuốc ức chế Cyclin-Dependent Kinase (CDK) như Palbociclib, Ribociclib chặn checkpoint G₁/S — điều trị ung thư vú, ung thư phổi.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🧫</div>
+        <h4>Liệu Pháp Tế Bào Gốc</h4>
+        <p>Kiểm soát nguyên phân của tế bào gốc để tái tạo mô: điều trị bỏng, thoái hóa sụn khớp, ghép giác mạc.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🔬</div>
+        <h4>Chẩn Đoán Di Truyền</h4>
+        <p>Karyotype phân tích NST ở kì giữa nguyên phân → phát hiện Down syndrome (3 NST 21), Turner (45,X), Klinefelter (47,XXY).</p>
+      </div>
+    </div>
+
+    <h3>Nông Nghiệp & Chọn Giống</h3>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-icon">🌾</div>
+        <h4>Đa Bội Hóa</h4>
+        <p>Colchicine ức chế thoi vô sắc → NST không phân li → tạo thể đa bội. Ví dụ: lúa mì 6n (hexaploid), chuối 3n (không hạt), dưa hấu 3n.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🌸</div>
+        <h4>Nhân Giống In Vitro</h4>
+        <p>Nuôi cấy mô thực vật dựa trên nguyên phân → nhân nhanh hàng triệu cây con sạch bệnh, giữ nguyên đặc tính di truyền.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🐟</div>
+        <h4>Thủy Sản</h4>
+        <p>Cá hồi 3n, hàu 3n (không sinh sản → dành toàn bộ năng lượng tăng trưởng). Tạo bằng cách gây sốc áp lực/nhiệt độ ngay sau thụ tinh.</p>
+      </div>
+    </div>
+
+    <h3>Công Nghệ Sinh Học & Pháp Y</h3>
+    <div class="app-grid">
+      <div class="app-card">
+        <div class="app-icon">🧬</div>
+        <h4>PCR & Nhân Dòng</h4>
+        <p>Phản ứng chuỗi polymerase (PCR) mô phỏng quá trình nhân đôi DNA; vector nhân dòng biểu hiện gen trong tế bào vi khuẩn — dựa trên nguyên lý phân bào.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🔎</div>
+        <h4>Pháp Y DNA</h4>
+        <p>Phân tích STR (Short Tandem Repeats) từ mẫu ADN người. Hiểu nguyên phân giúp giải thích sao tế bào mô cơ thể đều có cùng DNA với tế bào gốc.</p>
+      </div>
+      <div class="app-card">
+        <div class="app-icon">🤖</div>
+        <h4>CRISPR & Liệu Pháp Gen</h4>
+        <p>Chỉnh sửa gen hiệu quả nhất ở pha S (khi DNA đang được sao chép). CRISPR-Cas9 kết hợp chu kì tế bào để đảm bảo sửa đổi được truyền cho tế bào con.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">🌍</span>
+      <h4>Ứng Dụng Toàn Cầu</h4>
+      <p>Nhờ hiểu giảm phân, các kỹ thuật <strong>chẩn đoán tiền sinh sản</strong> như chọc ối (amniocentesis) và sinh thiết nhung mao màng đệm (CVS) có thể phát hiện bất thường NST trong bào thai từ tuần 10–15. Kỹ thuật thụ tinh trong ống nghiệm (IVF) kiểm soát chính xác giai đoạn phát triển tế bào trứng sau giảm phân.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: MỞ RỘNG -->
+<section id="mo-rong">
+  <div class="container">
+    <div class="section-label">07 · Chuyên Sâu</div>
+    <h2>Mở Rộng — <em>Kiến Thức Nâng Cao</em></h2>
+
+    <h3>Apoptosis — Cái Chết Được Lập Trình</h3>
+    <p>Không chỉ phân chia, tế bào còn có khả năng <strong>tự hủy có kiểm soát</strong> gọi là apoptosis. Trong quá trình phát triển phôi người, apoptosis tạo ra các ngón tay và ngón chân bằng cách loại bỏ các tế bào ở khoảng giữa. Một người trưởng thành tiêu hao khoảng 50–70 tỷ tế bào qua apoptosis mỗi ngày.</p>
+
+    <div class="phase-grid">
+      <div class="phase-card">
+        <div class="phase-tag" style="color:#ef5350;">Mất Kiểm Soát Chu Kì</div>
+        <h4>Ung Thư & Phân Bào Vô Hạn</h4>
+        <p style="color:var(--text2);">Đột biến gen ức chế khối u (p53, Rb) hoặc proto-oncogene (Ras, Myc) phá vỡ checkpoint → phân bào không kiểm soát → khối u.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent3);">Telomere & Lão Hóa</div>
+        <h4>Đồng Hồ Sinh Học Tế Bào</h4>
+        <p style="color:var(--text2);">Mỗi lần nguyên phân, telomere (đoạn cuối NST) rút ngắn ~50–200 bp. Sau ~50 lần phân chia (giới hạn Hayflick), tế bào vào trạng thái lão hóa (senescence) và ngừng phân chia.</p>
+      </div>
+      <div class="phase-card">
+        <div class="phase-tag" style="color:var(--accent4);">Telomerase</div>
+        <h4>Enzyme Trường Sinh</h4>
+        <p style="color:var(--text2);">Telomerase kéo dài telomere — hoạt động cao ở tế bào sinh dục, tế bào gốc. Trong ung thư, telomerase bị kích hoạt bất thường → tế bào "bất tử". Ức chế telomerase là hướng điều trị ung thư đầy tiềm năng.</p>
+      </div>
+    </div>
+
+    <h3>Epigenetics & Điều Hòa Chu Kì</h3>
+    <p>Ngoài trình tự DNA, <strong>methylation histon</strong> và <strong>acetylation histon</strong> điều hòa việc gen nào được biểu hiện trong từng pha của chu kì. Epigenetic marks có thể được di truyền qua nguyên phân, giải thích sao các tế bào con có chức năng chuyên biệt dù có cùng DNA.</p>
+
+    <h3>Sai Phân Ly NST & Hội Chứng Di Truyền</h3>
+
+    <div class="achievement-list">
+      <div class="achievement-item">
+        <div class="achievement-year" style="color:var(--accent);">47</div>
+        <div>
+          <h4>Hội Chứng Down (Trisomy 21)</h4>
+          <p>Sai phân ly NST 21 ở giảm phân → 3 NST 21. Tần suất 1/700 trẻ sinh sống. Tăng theo tuổi mẹ do tế bào trứng "chờ đợi" nhiều thập kỷ ở giai đoạn prophase I.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year" style="color:var(--accent4);">45</div>
+        <div>
+          <h4>Hội Chứng Turner (45,X)</h4>
+          <p>Chỉ có 1 NST X, mất một NST giới tính. Chủ yếu ảnh hưởng đến nữ giới: thấp bé, buồng trứng không phát triển.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year" style="color:var(--accent2);">47</div>
+        <div>
+          <h4>Hội Chứng Klinefelter (47,XXY)</h4>
+          <p>Một NST X thừa ở nam giới. Biểu hiện: vô sinh, mức testosterone thấp. Tần suất 1/500–1/1000 nam.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year" style="color:var(--accent3);">3n</div>
+        <div>
+          <h4>Thể Ba Nhiễm & Đa Bội</h4>
+          <p>Ở thực vật, đa bội thường vinh hóa (allopolyploidy) là cơ chế tạo loài mới. Lúa mì hexaploid (6n=42) là ví dụ điển hình của lai xa + đa bội hóa tự nhiên qua hàng nghìn năm tiến hóa.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Phân Bào Ở Vi Khuẩn — So Sánh</h3>
+    <div class="callout callout-info">
+      <span class="callout-icon">🦠</span>
+      <h4>Phân Đôi (Binary Fission) vs Nguyên Phân</h4>
+      <p>Vi khuẩn (nhân sơ) không có nguyên phân. Chúng phân chia bằng <strong>phân đôi</strong>: DNA vòng được nhân đôi, hai bản gắn vào màng tế bào, màng thắt lại phân đôi. Không có NST co ngắn, không có thoi vô sắc. Nhanh hơn nhiều: E. coli phân đôi mỗi 20 phút, trong khi tế bào người cần 18–24 giờ.</p>
+    </div>
+
+    <h3>Chu Kì Tế Bào & Nhịp Sinh Học</h3>
+    <p>Nghiên cứu gần đây cho thấy <strong>đồng hồ sinh học circadian</strong> điều phối chu kì tế bào: phần lớn tế bào bắt đầu pha S vào buổi sáng (khi cortisol cao). Điều này giải thích tại sao xạ trị đưa ra vào thời điểm nhất định trong ngày có thể hiệu quả hơn và ít tác dụng phụ hơn — một lĩnh vực nghiên cứu gọi là <strong>chronotherapy</strong>.</p>
+  </div>
+</section>
+
+<!-- SECTION 8: THÀNH TỰU -->
+<section id="thanh-tuu">
+  <div class="container">
+    <div class="section-label">08 · Lịch Sử Khám Phá</div>
+    <h2>Thành Tựu <em>Khoa Học</em></h2>
+
+    <p>Từ những quan sát đầu tiên dưới kính hiển vi đến những đột phá phân tử hiện đại — hành trình khám phá chu kì tế bào là một trong những thiên anh hùng ca đẹp nhất của khoa học.</p>
+
+    <div class="achievement-list">
+      <div class="achievement-item">
+        <div class="achievement-year">1838</div>
+        <div>
+          <h4>Lý Thuyết Tế Bào — Schleiden & Schwann</h4>
+          <p>Đặt nền móng: mọi sinh vật đều được tạo thành từ tế bào và tế bào là đơn vị cơ bản của sự sống.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">1855</div>
+        <div>
+          <h4>"Omnis cellula e cellula" — Virchow</h4>
+          <p>"Mọi tế bào sinh ra từ tế bào." Phát biểu cốt lõi về phân bào, bác bỏ thuyết tự sinh.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">1879</div>
+        <div>
+          <h4>Mô Tả Nguyên Phân Đầu Tiên — Walther Flemming</h4>
+          <p>Dùng thuốc nhuộm aniline quan sát và mô tả chi tiết nguyên phân ở tế bào mang trứng cá. Đặt tên "mitosis" từ tiếng Hy Lạp "mitos" (sợi).</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">1883</div>
+        <div>
+          <h4>Phát Hiện Giảm Phân — Van Beneden & Boveri</h4>
+          <p>Quan sát thấy giao tử có nửa số NST so với tế bào soma. Eduard van Beneden mô tả quá trình ở giun đũa ngựa, Theodor Boveri giải thích cơ chế.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">1953</div>
+        <div>
+          <h4>Cấu Trúc DNA — Watson & Crick</h4>
+          <p>Mô hình xoắn kép gợi ý ngay cơ chế nhân đôi DNA bán bảo toàn. Giải thích nền tảng phân tử của pha S trong chu kì tế bào.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">1983</div>
+        <div>
+          <h4>Phát Hiện MPF (Maturation Promoting Factor)</h4>
+          <p>Yoshio Masui và Leland Hartwell phát hiện yếu tố thúc đẩy phân bào — sau này xác định là phức hợp Cyclin B – CDK1. Cơ sở cho điều trị ung thư.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">2001</div>
+        <div>
+          <h4>Nobel Sinh Lý học — Điều Hòa Chu Kì Tế Bào</h4>
+          <p>Leland Hartwell, Tim Hunt và Paul Nurse nhận giải Nobel vì phát hiện cyclin, CDK và điểm kiểm soát chu kì tế bào — đặt nền tảng cho thuốc ung thư thế hệ mới.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">2012</div>
+        <div>
+          <h4>CRISPR-Cas9 — Chỉnh Sửa Gen Chính Xác</h4>
+          <p>Jennifer Doudna và Emmanuelle Charpentier (Nobel 2020) mở ra kỷ nguyên chỉnh sửa bộ gen chính xác. Kết hợp với hiểu biết về chu kì tế bào để tối ưu hiệu quả chỉnh sửa ở pha S.</p>
+        </div>
+      </div>
+      <div class="achievement-item">
+        <div class="achievement-year">2023</div>
+        <div>
+          <h4>Liệu Pháp CAR-T & Tế Bào Gốc</h4>
+          <p>FDA chấp thuận hàng chục liệu pháp tế bào mới. Kiểm soát nguyên phân và trạng thái tế bào gốc là cốt lõi của tất cả liệu pháp tế bào thế hệ mới trong điều trị ung thư, tim mạch và thần kinh.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-purple">
+      <span class="callout-icon">🔭</span>
+      <h4>Tương Lai — Hướng Nghiên Cứu Đỉnh Cao</h4>
+      <p>Các hướng nghiên cứu nóng nhất: <strong>(1)</strong> Senolytic therapy — loại bỏ tế bào lão hóa (senescent cells) để chống lão hóa. <strong>(2)</strong> Synthetic morphogenesis — lập trình nguyên phân để tái tạo cơ quan. <strong>(3)</strong> Liquid biopsy — phát hiện tế bào ung thư tuần hoàn bằng cách phân tích DNA từ phân bào bất thường. <strong>(4)</strong> Organoids — mô hình cơ quan 3D thu nhỏ phát triển nhờ kiểm soát nguyên phân in vitro.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 9: TÓM TẮT -->
+<section id="tom-tat" style="border-bottom:none;">
+  <div class="container">
+    <div class="section-label">09 · Tổng Kết</div>
+    <h2>Tóm Tắt <em>Toàn Diện</em></h2>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <span class="stat-num">4</span>
+        <span class="stat-label">Pha chu kì tế bào</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">4</span>
+        <span class="stat-label">Kì nguyên phân</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">8</span>
+        <span class="stat-label">Kì giảm phân (4+4)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">∞</span>
+        <span class="stat-label">Tổ hợp di truyền</span>
+      </div>
+    </div>
+
+    <div class="intro-card" style="margin-top:40px;">
+      <p class="intro-quote">
+        Chu kì tế bào là nhịp đập của sự sống ở cấp độ vi mô. Nguyên phân duy trì sự ổn định di truyền; giảm phân tạo ra sự đa dạng vô tận. Cùng nhau, chúng vừa bảo toàn vừa đổi mới — đó là bí quyết tiến hóa 3,8 tỷ năm của sự sống trên Trái Đất.
+      </p>
+    </div>
+
+    <h3>Bảng Tổng Kết Trạng Thái NST</h3>
+    <div class="compare-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Giai Đoạn</th>
+            <th>Số NST</th>
+            <th>Trạng Thái</th>
+            <th>Số Chromatid</th>
+            <th>Số DNA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tế bào 2n bình thường</td>
+            <td>2n</td>
+            <td>đơn</td>
+            <td>2n</td>
+            <td>2n</td>
+          </tr>
+          <tr>
+            <td>Sau pha S (trước NP)</td>
+            <td>2n</td>
+            <td>kép</td>
+            <td>4n</td>
+            <td>4n</td>
+          </tr>
+          <tr>
+            <td>NP — Kì đầu, kì giữa</td>
+            <td>2n</td>
+            <td>kép</td>
+            <td>4n</td>
+            <td>4n</td>
+          </tr>
+          <tr>
+            <td>NP — Kì sau</td>
+            <td>4n</td>
+            <td>đơn</td>
+            <td>4n</td>
+            <td>4n</td>
+          </tr>
+          <tr>
+            <td>NP — Tế bào con</td>
+            <td>2n</td>
+            <td>đơn</td>
+            <td>2n</td>
+            <td>2n</td>
+          </tr>
+          <tr style="background:rgba(206,147,216,0.04);">
+            <td>GP I — Kì đầu, kì giữa</td>
+            <td>2n</td>
+            <td>kép</td>
+            <td>4n</td>
+            <td>4n</td>
+          </tr>
+          <tr style="background:rgba(206,147,216,0.04);">
+            <td>GP I — Kì sau</td>
+            <td>2n</td>
+            <td>kép</td>
+            <td>4n</td>
+            <td>4n</td>
+          </tr>
+          <tr style="background:rgba(206,147,216,0.04);">
+            <td>GP II — Tế bào n kép</td>
+            <td>n</td>
+            <td>kép</td>
+            <td>2n</td>
+            <td>2n</td>
+          </tr>
+          <tr style="background:rgba(206,147,216,0.04);">
+            <td>GP II — Kì sau</td>
+            <td>2n</td>
+            <td>đơn</td>
+            <td>2n</td>
+            <td>2n</td>
+          </tr>
+          <tr style="background:rgba(206,147,216,0.04);">
+            <td>Giao tử cuối cùng</td>
+            <td>n</td>
+            <td>đơn</td>
+            <td>n</td>
+            <td>n</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:8px;">* Quy ước: 2n = bộ lưỡng bội; n = đơn bội. Ví dụ: ở người 2n=46, n=23.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Sinh Học Tế Bào · Chu Kì · Nguyên Phân · Giảm Phân</p>
+  <p style="margin-top:8px;font-size:10px;">Tài liệu học tập — Mọi nội dung khoa học được biên soạn từ kiến thức sinh học tế bào hiện đại</p>
+</footer>
+
+<script>
+  // Progress bar
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  });
+
+  // Intersection Observer for sections
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+  // Timeline items
+  const tlObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 150);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.timeline-item').forEach(item => tlObserver.observe(item));
+
+  // TOC dots
+  const sections = ['hero','chu-ki','nguyen-phan','giam-phan','tinh-toan','so-sanh','ung-dung','thanh-tuu'];
+  const dots = document.querySelectorAll('.toc-dot');
+
+  const tocObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const idx = sections.indexOf(e.target.id);
+        dots.forEach(d => d.classList.remove('active'));
+        if (idx >= 0 && dots[idx]) dots[idx].classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) tocObserver.observe(el);
+  });
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      const el = document.getElementById(sections[i]);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Animated counters
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !e.target.dataset.counted) {
+        e.target.dataset.counted = true;
+        const target = parseInt(e.target.dataset.count);
+        let current = 0;
+        const step = target / 40;
+        const timer = setInterval(() => {
+          current += step;
+          if (current >= target) { current = target; clearInterval(timer); }
+          e.target.textContent = Math.floor(current);
+        }, 40);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
+
+  // Smooth nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
